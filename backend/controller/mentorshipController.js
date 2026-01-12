@@ -1,0 +1,208 @@
+const User = require('../models/User');
+const Mentorship = require('../models/Mentorship');
+
+// @desc    Request to become a mentor
+// @route   POST /api/mentorship/become-mentor
+const becomeMentor = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user.canMentor) {
+      return res.status(403).json({ message: 'You must be Level 5 or higher to become a mentor' });
+    }
+    
+    user.isMentor = true;
+    if (user.mentorSlots === 0) {
+      user.mentorSlots = 3; // Default slots
+    }
+    await user.save();
+    
+    res.status(200).json({
+      message: 'You are now a mentor!',
+      mentorSlots: user.mentorSlots
+    });
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Send mentorship request
+// @route   POST /api/mentorship/request/:mentorId
+const requestMentorship = async (req, res) => {
+  try {
+    const { mentorId } = req.params;
+    const menteeId = req.user._id;
+    
+    const mentor = await User.findById(mentorId);
+    const mentee = await User.findById(menteeId);
+    
+    if (!mentor || !mentor.isMentor) {
+      return res.status(404).json({ message: 'Mentor not found' });
+    }
+    
+    if (mentor.activeMentees.length >= mentor.mentorSlots) {
+      return res.status(400).json({ message: 'Mentor has reached maximum mentee capacity' });
+    }
+    
+    // Check if request already exists
+    const existingRequest = await Mentorship.findOne({
+      mentor: mentorId,
+      mentee: menteeId,
+      status: { $in: ['pending', 'accepted'] }
+    });
+    
+    if (existingRequest) {
+      return res.status(400).json({ message: 'Mentorship request already exists' });
+    }
+    
+    const mentorship = await Mentorship.create({
+      mentor: mentorId,
+      mentee: menteeId,
+      menteeLevelAtStart: mentee.level,
+      menteeLevelCurrent: mentee.level
+    });
+    
+    res.status(201).json({
+      message: 'Mentorship request sent!',
+      mentorship
+    });
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Accept/Reject mentorship request
+// @route   PUT /api/mentorship/:requestId/respond
+const respondToRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { action } = req.body; // 'accept' or 'reject'
+    
+    const mentorship = await Mentorship.findById(requestId).populate('mentee');
+    
+    if (!mentorship) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    
+    if (mentorship.mentor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    if (action === 'accept') {
+      mentorship.status = 'accepted';
+      
+      const mentor = await User.findById(mentorship.mentor);
+      const mentee = await User.findById(mentorship.mentee);
+      
+      mentor.activeMentees.push(mentee._id);
+      mentee.myMentor = mentor._id;
+      
+      await mentor.save();
+      await mentee.save();
+      await mentorship.save();
+      
+      res.status(200).json({
+        message: 'Mentorship accepted!',
+        mentorship
+      });
+    } else {
+      mentorship.status = 'rejected';
+      await mentorship.save();
+      
+      res.status(200).json({
+        message: 'Mentorship request rejected'
+      });
+    }
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get available mentors (based on user's level + 2 rule)
+// @route   GET /api/mentorship/available-mentors
+const getAvailableMentors = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    // Find mentors who are 0-2 levels above current user
+    const targetLevels = [user.level, user.level + 1, user.level + 2];
+    
+    const mentors = await User.find({
+      isMentor: true,
+      level: { $in: targetLevels },
+      _id: { $ne: user._id },
+      $expr: { $lt: [{ $size: "$activeMentees" }, "$mentorSlots"] }
+    })
+    .select('name level currentLevelName mentorPoints endorsements activeMentees mentorSlots')
+    .limit(20);
+    
+    const mentorsWithAvailability = mentors.map(mentor => ({
+      _id: mentor._id,
+      name: mentor.name,
+      level: mentor.level,
+      levelName: mentor.currentLevelName,
+      mentorPoints: mentor.mentorPoints,
+      endorsements: mentor.endorsements,
+      availableSlots: mentor.mentorSlots - mentor.activeMentees.length,
+      totalSlots: mentor.mentorSlots
+    }));
+    
+    res.status(200).json({ mentors: mentorsWithAvailability });
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Endorse a mentor
+// @route   POST /api/mentorship/:mentorshipId/endorse
+const endorseMentor = async (req, res) => {
+  try {
+    const { mentorshipId } = req.params;
+    const { rating, message } = req.body;
+    
+    const mentorship = await Mentorship.findById(mentorshipId);
+    
+    if (!mentorship) {
+      return res.status(404).json({ message: 'Mentorship not found' });
+    }
+    
+    if (mentorship.mentee.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only mentee can endorse' });
+    }
+    
+    if (mentorship.isEndorsed) {
+      return res.status(400).json({ message: 'Already endorsed' });
+    }
+    
+    mentorship.isEndorsed = true;
+    mentorship.rating = rating;
+    mentorship.endorsementMessage = message;
+    await mentorship.save();
+    
+    // Update mentor's endorsement count
+    const mentor = await User.findById(mentorship.mentor);
+    mentor.endorsements += 1;
+    mentor.xp += 100; // Bonus XP for endorsement
+    await mentor.save();
+    
+    res.status(200).json({
+      message: 'Mentor endorsed successfully!',
+      mentorship
+    });
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  becomeMentor,
+  requestMentorship,
+  respondToRequest,
+  getAvailableMentors,
+  endorseMentor
+};
