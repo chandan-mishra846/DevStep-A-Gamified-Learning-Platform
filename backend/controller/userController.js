@@ -9,13 +9,20 @@ const generateToken = (id) => {
 // @desc Register User
 const registerUser = async (req, res) => {
   try {
+    console.log('📝 Register request received:', req.body);
     const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Please provide name, email, and password' });
+    }
+    
     const userExists = await User.findOne({ email });
 
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
     // New User creation (Starting with 100 XP as welcome bonus)
     const user = await User.create({ name, email, password, xp: 100 });
+    console.log('✅ User created:', user._id);
 
     res.status(201).json({
       _id: user._id,
@@ -26,6 +33,7 @@ const registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('❌ Register error:', error);
     res.status(500).json({ message: error.message });
   }
 };

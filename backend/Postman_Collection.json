@@ -1,0 +1,491 @@
+{
+  "info": {
+    "name": "DevStep - Gamified Learning API",
+    "description": "Complete API Collection for Gamified College Learning App",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "USER ROUTES",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/users/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "users", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/users/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "users", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "QUEST ROUTES",
+      "item": [
+        {
+          "name": "Create Quest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Learn JavaScript Basics\",\n  \"description\": \"Master the fundamentals of JavaScript\",\n  \"requiredLevel\": 1,\n  \"contentType\": \"video\",\n  \"contentUrl\": \"https://youtube.com/example\",\n  \"difficulty\": \"easy\",\n  \"xpReward\": 100\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/quests",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests"]
+            }
+          }
+        },
+        {
+          "name": "Get All Quests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/quests",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests"]
+            }
+          }
+        },
+        {
+          "name": "Get Quest By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/quests/QUEST_ID_HERE",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests", "QUEST_ID_HERE"]
+            }
+          }
+        },
+        {
+          "name": "Complete Quest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/quests/QUEST_ID_HERE/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests", "QUEST_ID_HERE", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Update Quest",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Quest Title\",\n  \"xpReward\": 150\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/quests/QUEST_ID_HERE",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests", "QUEST_ID_HERE"]
+            }
+          }
+        },
+        {
+          "name": "Delete Quest",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/quests/QUEST_ID_HERE",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quests", "QUEST_ID_HERE"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MESSAGE ROUTES",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiverId\": \"RECEIVER_USER_ID\",\n  \"content\": \"Hello! How are you doing?\",\n  \"attachmentUrl\": \"\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/messages/send",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "messages", "send"]
+            }
+          }
+        },
+        {
+          "name": "Get All Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/messages",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/messages/conversation/OTHER_USER_ID",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "messages", "conversation", "OTHER_USER_ID"]
+            }
+          }
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/messages/MESSAGE_ID_HERE/read",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "messages", "MESSAGE_ID_HERE", "read"]
+            }
+          }
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/messages/MESSAGE_ID_HERE",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "messages", "MESSAGE_ID_HERE"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MENTORSHIP ROUTES",
+      "item": [
+        {
+          "name": "Become Mentor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/become-mentor",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "become-mentor"]
+            }
+          }
+        },
+        {
+          "name": "Request Mentorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/request/MENTOR_USER_ID",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "request", "MENTOR_USER_ID"]
+            }
+          }
+        },
+        {
+          "name": "Accept Mentorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/accept",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Reject Mentorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/reject",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Get All Mentorships",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship"]
+            }
+          }
+        },
+        {
+          "name": "Get Mentorship Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE"]
+            }
+          }
+        },
+        {
+          "name": "Add Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration\": 60,\n  \"topic\": \"JavaScript Fundamentals\",\n  \"notes\": \"Covered functions and scope\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/session",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "session"]
+            }
+          }
+        },
+        {
+          "name": "Endorse Mentee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"message\": \"Great learner, very dedicated!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/endorse",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "endorse"]
+            }
+          }
+        },
+        {
+          "name": "Complete Mentorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Remove Mentee",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_JWT_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/mentorship/MENTORSHIP_ID_HERE/remove-mentee",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "mentorship", "MENTORSHIP_ID_HERE", "remove-mentee"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

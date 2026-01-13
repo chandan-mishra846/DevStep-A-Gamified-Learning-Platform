@@ -1,0 +1,54 @@
+.mentorship-section {
+  animation: fadeIn 0.3s ease;
+}
+
+.badge-mentor {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mentorships-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.mentorship-card {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mentorship-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.mentorship-card h3 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+}
+
+.mentorship-card p {
+  margin: 10px 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.mentorship-card strong {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .mentorships-list {
+    grid-template-columns: 1fr;
+  }
+}

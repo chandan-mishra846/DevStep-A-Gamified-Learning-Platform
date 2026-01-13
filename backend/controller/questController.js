@@ -219,9 +219,118 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
+// @desc    Get all quests
+// @route   GET /api/quests
+const getQuests = async (req, res) => {
+  try {
+    const { level, difficulty } = req.query;
+    let filter = {};
+    
+    if (level) filter.requiredLevel = parseInt(level);
+    if (difficulty) filter.difficulty = difficulty;
+    
+    const quests = await Quest.find(filter)
+      .sort({ orderIndex: 1 })
+      .select('title description requiredLevel difficulty xpReward contentType');
+    
+    res.status(200).json({ quests });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get specific quest by ID
+// @route   GET /api/quests/:questId
+const getQuestById = async (req, res) => {
+  try {
+    const { questId } = req.params;
+    
+    const quest = await Quest.findById(questId);
+    if (!quest) {
+      return res.status(404).json({ message: 'Quest not found' });
+    }
+    
+    res.status(200).json({ quest });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create new quest (admin only)
+// @route   POST /api/quests
+const createQuest = async (req, res) => {
+  try {
+    const { title, description, requiredLevel, contentType, contentUrl, difficulty, xpReward, quizQuestions, projectRequirements } = req.body;
+    
+    const quest = await Quest.create({
+      title,
+      description,
+      requiredLevel,
+      contentType,
+      contentUrl,
+      difficulty,
+      xpReward,
+      quizQuestions,
+      projectRequirements
+    });
+    
+    res.status(201).json({
+      message: 'Quest created successfully!',
+      quest
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update quest
+// @route   PUT /api/quests/:questId
+const updateQuest = async (req, res) => {
+  try {
+    const { questId } = req.params;
+    const updateData = req.body;
+    
+    const quest = await Quest.findByIdAndUpdate(
+      questId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!quest) {
+      return res.status(404).json({ message: 'Quest not found' });
+    }
+    
+    res.status(200).json({
+      message: 'Quest updated successfully!',
+      quest
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete quest
+// @route   DELETE /api/quests/:questId
+const deleteQuest = async (req, res) => {
+  try {
+    const { questId } = req.params;
+    
+    const quest = await Quest.findByIdAndDelete(questId);
+    if (!quest) {
+      return res.status(404).json({ message: 'Quest not found' });
+    }
+    
+    res.status(200).json({ message: 'Quest deleted successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
-  completeQuest, 
-  submitQuiz, 
-  getDashboard, 
-  getLeaderboard 
+  completeQuest,
+  getQuests,
+  getQuestById,
+  createQuest,
+  updateQuest,
+  deleteQuest
 };

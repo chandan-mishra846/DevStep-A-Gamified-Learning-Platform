@@ -11,7 +11,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedUser = localStorage.getItem('userInfo');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Error parsing user info:', error);
+        localStorage.removeItem('userInfo');
+      }
     }
     setLoading(false);
   }, []);
@@ -21,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     const { data } = await axios.post('http://localhost:5000/api/users/login', { email, password });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
+    return data;
   };
   
   // Register Function
@@ -28,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     const { data } = await axios.post('http://localhost:5000/api/users/register', { name, email, password });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
+    return data;
   };
 
   // Logout Function

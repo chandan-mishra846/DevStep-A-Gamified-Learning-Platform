@@ -136,8 +136,70 @@ const getAllConversations = async (req, res) => {
   }
 };
 
+// @desc    Get all messages for a user
+// @route   GET /api/messages
+const getMessages = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    const messages = await Message.find({
+      $or: [{ sender: userId }, { receiver: userId }]
+    })
+    .sort({ createdAt: -1 })
+    .populate('sender', 'name level currentLevelName')
+    .populate('receiver', 'name level currentLevelName')
+    .limit(50);
+    
+    res.status(200).json({ messages });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Mark message as read
+// @route   PUT /api/messages/:messageId/read
+const markAsRead = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    
+    const message = await Message.findByIdAndUpdate(
+      messageId,
+      { isRead: true, readAt: new Date() },
+      { new: true }
+    );
+    
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    
+    res.status(200).json({ message: 'Message marked as read', messageData: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete message
+// @route   DELETE /api/messages/:messageId
+const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    
+    const message = await Message.findByIdAndDelete(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    
+    res.status(200).json({ message: 'Message deleted successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   sendMessage,
+  getMessages,
   getConversation,
-  getAllConversations
+  getAllConversations,
+  markAsRead,
+  deleteMessage
 };
