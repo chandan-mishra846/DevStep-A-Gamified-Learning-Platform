@@ -40,11 +40,18 @@ const protectMentorOrAdmin = async (req, res, next) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    if (req.user.role === 'admin' || req.user.role === 'mentor') {
+    // Allow if:
+    // 1. Role is admin or mentor
+    // 2. User is a mentor (isMentor = true)
+    // 3. User is Level 5+ (eligible to create quests)
+    if (req.user.role === 'admin' || 
+        req.user.role === 'mentor' || 
+        req.user.isMentor === true || 
+        req.user.level >= 5) {
       next();
     } else {
       return res.status(403).json({ 
-        message: 'Only Mentors and Admins can create quests. You must be Level 5+ to become a mentor.' 
+        message: 'Only Level 5+ users, Mentors, and Admins can create quests.' 
       });
     }
   } catch (error) {

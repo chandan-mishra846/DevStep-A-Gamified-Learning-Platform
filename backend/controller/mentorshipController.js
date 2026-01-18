@@ -7,11 +7,14 @@ const becomeMentor = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     
-    if (!user.canMentor) {
+    // Check level directly
+    if (user.level < 5) {
       return res.status(403).json({ message: 'You must be Level 5 or higher to become a mentor' });
     }
     
+    // Update mentor status
     user.isMentor = true;
+    user.canMentor = true;
     if (user.mentorSlots === 0) {
       user.mentorSlots = 3; // Default slots
     }
@@ -127,32 +130,34 @@ const getAvailableMentors = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     
-    // Find mentors who are 0-2 levels above current user
-    const targetLevels = [user.level, user.level + 1, user.level + 2];
-    
+    // Find all mentors with available slots
     const mentors = await User.find({
       isMentor: true,
-      level: { $in: targetLevels },
-      _id: { $ne: user._id },
-      $expr: { $lt: [{ $size: "$activeMentees" }, "$mentorSlots"] }
+      _id: { $ne: user._id }
     })
     .select('name level currentLevelName mentorPoints endorsements activeMentees mentorSlots')
     .limit(20);
     
-    const mentorsWithAvailability = mentors.map(mentor => ({
+    // Filter mentors with available slots
+    const availableMentors = mentors.filter(mentor => 
+      mentor.activeMentees.length < mentor.mentorSlots
+    );
+    
+    const mentorsWithAvailability = availableMentors.map(mentor => ({
       _id: mentor._id,
       name: mentor.name,
       level: mentor.level,
-      levelName: mentor.currentLevelName,
-      mentorPoints: mentor.mentorPoints,
-      endorsements: mentor.endorsements,
+      currentLevelName: mentor.currentLevelName,
+      mentorPoints: mentor.mentorPoints || 0,
+      endorsements: mentor.endorsements || 0,
       availableSlots: mentor.mentorSlots - mentor.activeMentees.length,
-      totalSlots: mentor.mentorSlots
+      mentorSlots: mentor.mentorSlots
     }));
     
     res.status(200).json({ mentors: mentorsWithAvailability });
     
   } catch (error) {
+    console.error('Error fetching mentors:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -445,12 +450,14 @@ const completeMentorship = async (req, res) => {
 module.exports = {
   becomeMentor,
   requestMentorship,
+  respondToRequest,
   acceptMentorship,
   rejectMentorship,
   removeMentee,
   getMentorshipDetails,
   getAllMentorships,
+  getAvailableMentors,
   addSession,
-  endorseMentee,
+  endorseMentor,
   completeMentorship
 };

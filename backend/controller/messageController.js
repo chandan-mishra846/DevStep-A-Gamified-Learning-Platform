@@ -15,20 +15,6 @@ const sendMessage = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Check if sender can message this user (+2 level rule or mentor-mentee)
-    if (!sender.canMessageUser(receiver)) {
-      return res.status(403).json({ 
-        message: 'You can only message users up to 2 levels above you, or your mentor/mentees' 
-      });
-    }
-    
-    // Check message credits
-    if (sender.messageCredits < 1) {
-      return res.status(403).json({ 
-        message: 'Insufficient message credits. Complete quests to earn more!' 
-      });
-    }
-    
     // Create message
     const message = await Message.create({
       sender: senderId,
@@ -39,16 +25,9 @@ const sendMessage = async (req, res) => {
                           sender.activeMentees?.some(m => m.toString() === receiverId)
     });
     
-    // Deduct credit only for non-mentorship messages
-    if (!message.isMentorshipMessage) {
-      sender.messageCredits -= 1;
-      await sender.save();
-    }
-    
     res.status(201).json({
       message: 'Message sent successfully',
-      messageData: message,
-      creditsRemaining: sender.messageCredits
+      messageData: message
     });
     
   } catch (error) {

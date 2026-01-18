@@ -80,53 +80,55 @@ userSchema.pre('save', async function () {
       this.password = await bcrypt.hash(this.password, salt);
     }
 
-    // Auto Level-Up Logic
-    const levelThresholds = [
-      { level: 1, minXP: 0, name: 'The Novice', badge: 'Hello World' },
-      { level: 2, minXP: 500, name: 'The Architect', badge: 'Logic Master' },
-      { level: 3, minXP: 1500, name: 'The Builder', badge: 'Ship It!' },
-      { level: 4, minXP: 3000, name: 'The Marketer', badge: 'Profile Pro' },
-      { level: 5, minXP: 5000, name: 'The Corporate Scout', badge: 'Inside Man' },
-      { level: 6, minXP: 8000, name: 'The Gladiator', badge: 'Battle Ready' },
-      { level: 7, minXP: 12000, name: 'The Legend', badge: 'Hired!' }
-    ];
-    
-    // Determine level based on XP
-    for (let i = levelThresholds.length - 1; i >= 0; i--) {
-      if (this.xp >= levelThresholds[i].minXP) {
-        const oldLevel = this.level;
-        this.level = levelThresholds[i].level;
-        this.currentLevelName = levelThresholds[i].name;
-        
-        // Enable mentor eligibility at Level 5+
-        if (this.level >= 5) {
-          this.canMentor = true;
-          if (!this.isMentor) {
-            this.mentorSlots = 3; // Default slots when becoming eligible
+    // Auto Level-Up Logic - ONLY if XP is modified
+    if (this.isModified('xp')) {
+      const levelThresholds = [
+        { level: 1, minXP: 0, name: 'The Novice', badge: 'Hello World' },
+        { level: 2, minXP: 500, name: 'The Architect', badge: 'Logic Master' },
+        { level: 3, minXP: 1500, name: 'The Builder', badge: 'Ship It!' },
+        { level: 4, minXP: 3000, name: 'The Marketer', badge: 'Profile Pro' },
+        { level: 5, minXP: 5000, name: 'The Corporate Scout', badge: 'Inside Man' },
+        { level: 6, minXP: 8000, name: 'The Gladiator', badge: 'Battle Ready' },
+        { level: 7, minXP: 12000, name: 'The Legend', badge: 'Hired!' }
+      ];
+      
+      // Determine level based on XP
+      for (let i = levelThresholds.length - 1; i >= 0; i--) {
+        if (this.xp >= levelThresholds[i].minXP) {
+          const oldLevel = this.level;
+          this.level = levelThresholds[i].level;
+          this.currentLevelName = levelThresholds[i].name;
+          
+          // Enable mentor eligibility at Level 5+
+          if (this.level >= 5) {
+            this.canMentor = true;
+            if (!this.isMentor) {
+              this.mentorSlots = 3; // Default slots when becoming eligible
+            }
           }
-        }
-        
-        // Award level-up badge if not already awarded
-        if (oldLevel < this.level) {
-          const badgeExists = this.badges.some(b => b.name === levelThresholds[i].badge);
-          if (!badgeExists) {
-            this.badges.push({
-              name: levelThresholds[i].badge,
-              description: `Unlocked by reaching Level ${this.level}`,
-              icon: `level-${this.level}-badge`
+          
+          // Award level-up badge if not already awarded
+          if (oldLevel < this.level) {
+            const badgeExists = this.badges.some(b => b.name === levelThresholds[i].badge);
+            if (!badgeExists) {
+              this.badges.push({
+                name: levelThresholds[i].badge,
+                description: `Unlocked by reaching Level ${this.level}`,
+                icon: `level-${this.level}-badge`
+              });
+            }
+            
+            // Award artifact for reaching level
+            this.artifacts.push({
+              name: this.level === 3 ? 'The Golden Keyboard' : 
+                    this.level === 7 ? 'The Offer Letter Cape' : `Level ${this.level} Trophy`,
+              description: `Earned by completing Level ${oldLevel}`,
+              level: this.level
             });
           }
           
-          // Award artifact for reaching level
-          this.artifacts.push({
-            name: this.level === 3 ? 'The Golden Keyboard' : 
-                  this.level === 7 ? 'The Offer Letter Cape' : `Level ${this.level} Trophy`,
-            description: `Earned by completing Level ${oldLevel}`,
-            level: this.level
-          });
+          break;
         }
-        
-        break;
       }
     }
   } catch (error) {
