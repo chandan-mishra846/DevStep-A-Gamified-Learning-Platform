@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 export const AuthContext = createContext();
 
@@ -23,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
   // Login Function
   const login = async (email, password) => {
-    const { data } = await axios.post('http://localhost:5000/api/users/login', { email, password });
+    const { data } = await axios.post(`${API_BASE_URL}/api/users/login`, { email, password });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     return data;
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }) => {
   
   // Register Function
   const register = async (name, email, password) => {
-    const { data } = await axios.post('http://localhost:5000/api/users/register', { name, email, password });
+    const { data } = await axios.post(`${API_BASE_URL}/api/users/register`, { name, email, password });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     return data;
@@ -43,8 +44,26 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Refresh User Data Function
+  const refreshUser = async () => {
+    try {
+      const savedUser = localStorage.getItem('userInfo');
+      if (savedUser) {
+        const { token } = JSON.parse(savedUser);
+        const { data } = await axios.get(`${API_BASE_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const updatedUser = { ...data, token };
+        setUser(updatedUser);
+        localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -11,15 +11,32 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import '../styles/Dashboard.css';
 
 export default function Dashboard() {
-  const { user, logout, loading: authLoading } = useContext(AuthContext);
+  const { user, logout, loading: authLoading, refreshUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('quests');
 
   useEffect(() => {
+    // Only redirect if auth loading is complete and no user exists
     if (!authLoading && !user) {
-      navigate('/login');
+      const savedUser = localStorage.getItem('userInfo');
+      if (!savedUser) {
+        navigate('/login');
+      }
     }
   }, [user, navigate, authLoading]);
+
+  // Refresh user data when dashboard loads
+  useEffect(() => {
+    if (user && refreshUser) {
+      refreshUser();
+    }
+  }, []);
+
+  const handleRefresh = async () => {
+    if (refreshUser) {
+      await refreshUser();
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -37,7 +54,7 @@ export default function Dashboard() {
   return (
     <ErrorBoundary>
       <div className="dashboard">
-        <Header user={user} onLogout={handleLogout} />
+        <Header user={user} onLogout={handleLogout} onRefresh={handleRefresh} />
         
         <div className="dashboard-container">
           <div className="sidebar">

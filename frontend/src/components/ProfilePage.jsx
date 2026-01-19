@@ -4,78 +4,145 @@ export default function ProfilePage({ user }) {
   const level = user?.level || 1;
   const xp = user?.xp || 0;
   const role = user?.role || 'student';
+  const currentLevelName = user?.currentLevelName || 'The Novice';
 
-  const streak = user?.streak || { current: 3, best: 7, nextReward: 'Badge boost' };
+  const streak = {
+    current: user?.streakCount || 0,
+    best: user?.longestStreak || 0,
+    nextReward: user?.streakCount >= 7 ? '+100 XP Bonus' : 'Keep going!'
+  };
 
-  const menteeSlots = (() => {
-    if (level >= 7) return 'Unlimited mentees';
-    if (level >= 6) return 'Up to 5 mentees';
-    if (level >= 5) return 'Up to 3 mentees';
-    return 'Mentoring unlocks at Level 5';
-  })();
+  const messageCredits = user?.messageCredits || 10;
+  const completedQuests = user?.completedQuests?.length || 0;
+  const activeMentees = user?.activeMentees?.length || 0;
+
+  const levelThresholds = [
+    { level: 1, minXP: 0, maxXP: 499 },
+    { level: 2, minXP: 500, maxXP: 1499 },
+    { level: 3, minXP: 1500, maxXP: 2999 },
+    { level: 4, minXP: 3000, maxXP: 4999 },
+    { level: 5, minXP: 5000, maxXP: 7999 },
+    { level: 6, minXP: 8000, maxXP: 11999 },
+    { level: 7, minXP: 12000, maxXP: 999999 }
+  ];
+
+  const currentLevelData = levelThresholds.find(l => l.level === level);
+  const xpProgress = currentLevelData 
+    ? ((xp - currentLevelData.minXP) / (currentLevelData.maxXP - currentLevelData.minXP)) * 100 
+    : 0;
+  const xpNeeded = currentLevelData ? currentLevelData.maxXP - xp + 1 : 0;
 
   const levelBadges = [
-    { level: 1, title: 'Novice', detail: 'Access basic quests', earned: level >= 1 },
-    { level: 3, title: 'Streak Ready', detail: 'Streaks unlocked', earned: level >= 3 },
-    { level: 5, title: 'Mentor', detail: 'Mentor up to 3 mentees', earned: level >= 5 },
-    { level: 6, title: 'Senior Mentor', detail: 'Mentor up to 5 mentees', earned: level >= 6 },
-    { level: 7, title: 'Community Lead', detail: 'Unlimited mentees', earned: level >= 7 },
+    { level: 1, title: 'The Novice', icon: '🌱', detail: 'Begin your journey', earned: level >= 1 },
+    { level: 2, title: 'The Architect', icon: '🏗️', detail: 'Master the logic', earned: level >= 2 },
+    { level: 3, title: 'The Builder', icon: '🚀', detail: 'Ship real projects', earned: level >= 3 },
+    { level: 4, title: 'The Marketer', icon: '📱', detail: 'Build your brand', earned: level >= 4 },
+    { level: 5, title: 'The Scout', icon: '🎯', detail: 'Mentor others', earned: level >= 5 },
+    { level: 6, title: 'The Gladiator', icon: '⚔️', detail: 'Battle ready', earned: level >= 6 },
+    { level: 7, title: 'The Legend', icon: '👑', detail: 'You made it!', earned: level >= 7 },
   ];
 
   return (
     <div className="profile-page">
-      <div className="profile-hero">
-        <div className="avatar">{user?.name?.[0]?.toUpperCase() || 'U'}</div>
-        <div className="info">
-          <h2>{user?.name || 'Student'}</h2>
-          <p className="meta">{user?.email || 'user@example.com'} • {role.toUpperCase()}</p>
-          <div className="tags">
-            <span className="tag">Level {level}</span>
-            <span className="tag">{xp} XP</span>
-            <span className="tag highlight">{menteeSlots}</span>
+      {/* Hero Section */}
+      <div className="profile-hero-card">
+        <div className="hero-bg-gradient"></div>
+        <div className="hero-content">
+          <div className="profile-avatar-wrapper">
+            <div className="avatar-large">
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="level-badge-overlay">
+              <span className="level-number">Lvl {level}</span>
+            </div>
+          </div>
+          <div className="profile-info">
+            <h1 className="profile-name">{user?.name || 'Student'}</h1>
+            <p className="profile-title">{currentLevelName}</p>
+            <p className="profile-meta">
+              <span>{user?.email || 'user@example.com'}</span>
+              <span className="separator">•</span>
+              <span className="role-badge">{role.toUpperCase()}</span>
+            </p>
+            <div className="profile-badges">
+              {user?.isMentor && (
+                <span className="mentor-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  </svg>
+                  Mentor
+                </span>
+              )}
+              <span className="xp-badge">{xp.toLocaleString()} XP</span>
+            </div>
+          </div>
+        </div>
+
+        {/* XP Progress Bar */}
+        {level < 7 && (
+          <div className="xp-progress-section">
+            <div className="xp-progress-header">
+              <span className="xp-label">Level Progress</span>
+              <span className="xp-remaining">{xpNeeded} XP to Level {level + 1}</span>
+            </div>
+            <div className="xp-progress-bar">
+              <div className="xp-progress-fill" style={{width: `${Math.min(xpProgress, 100)}%`}}></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Stats Grid */}
+      <div className="stats-grid-modern">
+        <div className="stat-card">
+          <div className="stat-icon">📚</div>
+          <div className="stat-content">
+            <div className="stat-value">{completedQuests}</div>
+            <div className="stat-label">Quests Completed</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">💬</div>
+          <div className="stat-content">
+            <div className="stat-value">{messageCredits}</div>
+            <div className="stat-label">Message Credits</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">👥</div>
+          <div className="stat-content">
+            <div className="stat-value">{activeMentees}</div>
+            <div className="stat-label">Active Mentees</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🔥</div>
+          <div className="stat-content">
+            <div className="stat-value">{streak.current}</div>
+            <div className="stat-label">Day Streak</div>
           </div>
         </div>
       </div>
 
-      <div className="grid">
-        <section className="card streak">
-          <header>
-            <h3>Streak</h3>
-            <span className="pill">Best {streak.best} days</span>
-          </header>
-          <div className="streak-stats">
-            <div>
-              <div className="number">{streak.current}</div>
-              <div className="label">Current Streak</div>
-            </div>
-            <div>
-              <div className="number">{streak.best}</div>
-              <div className="label">Best Streak</div>
-            </div>
-            <div>
-              <div className="number">{streak?.nextReward || '—'}</div>
-              <div className="label">Next Reward</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="card badges">
-          <header>
-            <h3>Level Badges</h3>
-            <span className="pill subtle">Updates as you level up</span>
-          </header>
-          <div className="badge-grid">
-            {levelBadges.map(badge => (
-              <div key={badge.level} className={`badge ${badge.earned ? 'earned' : 'locked'}`}>
-                <div className="icon">{badge.earned ? '🏅' : '🔒'}</div>
-                <div>
-                  <div className="title">Level {badge.level}: {badge.title}</div>
-                  <div className="subtitle">{badge.detail}</div>
-                </div>
+      {/* Level Badges */}
+      <div className="badges-section">
+        <div className="section-header">
+          <h3>🏆 Level Milestones</h3>
+          <span className="badge-count">{levelBadges.filter(b => b.earned).length}/{levelBadges.length}</span>
+        </div>
+        <div className="badges-grid-modern">
+          {levelBadges.map(badge => (
+            <div key={badge.level} className={`milestone-card ${badge.earned ? 'earned' : 'locked'}`}>
+              <div className="milestone-icon">{badge.icon}</div>
+              <div className="milestone-content">
+                <div className="milestone-title">{badge.title}</div>
+                <div className="milestone-level">Level {badge.level}</div>
+                <div className="milestone-detail">{badge.detail}</div>
               </div>
-            ))}
-          </div>
-        </section>
+              {badge.earned && <div className="earned-checkmark">✓</div>}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
