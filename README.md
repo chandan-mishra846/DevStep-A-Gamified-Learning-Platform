@@ -173,7 +173,7 @@ npm run dev
 MIT
 
 ## 👤 Author
-[Your Name]
+Chandan Mishra
 
 ---
 
