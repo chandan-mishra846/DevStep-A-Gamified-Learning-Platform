@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import '../styles/Signup.css';
@@ -9,8 +9,15 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { register } = useContext(AuthContext);
+  const { register, user, loading } = useContext(AuthContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,10 +34,12 @@ const Signup = () => {
     }
 
     try {
+      setIsSubmitting(true);
       await register(name, email, password);
-      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -76,7 +85,7 @@ const Signup = () => {
                 className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="********"
               />
             </div>
 
@@ -88,7 +97,7 @@ const Signup = () => {
                 className="form-input"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="********"
               />
             </div>
 
@@ -96,8 +105,8 @@ const Signup = () => {
               <div className="error-message">{error}</div>
             )}
 
-            <button type="submit" className="btn-submit">
-              Create Account
+            <button type="submit" className="btn-submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

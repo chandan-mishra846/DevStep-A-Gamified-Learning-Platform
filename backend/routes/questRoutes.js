@@ -1,6 +1,7 @@
 const express = require('express');
 const { 
   completeQuest,
+  submitQuiz,
   getQuests,
   getQuestById,
   createQuest,
@@ -27,5 +28,6 @@ router.delete('/:questId', protect, protectMentorOrAdmin, deleteQuest);
 
 // Complete a quest and earn XP (Protected)
 router.post('/:questId/complete', protect, completeQuest);
+router.post('/:questId/submit-quiz', protect, submitQuiz);
 
 module.exports = router;

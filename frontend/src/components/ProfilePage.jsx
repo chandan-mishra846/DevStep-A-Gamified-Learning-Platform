@@ -33,13 +33,13 @@ export default function ProfilePage({ user }) {
   const xpNeeded = currentLevelData ? currentLevelData.maxXP - xp + 1 : 0;
 
   const levelBadges = [
-    { level: 1, title: 'The Novice', icon: '🌱', detail: 'Begin your journey', earned: level >= 1 },
-    { level: 2, title: 'The Architect', icon: '🏗️', detail: 'Master the logic', earned: level >= 2 },
-    { level: 3, title: 'The Builder', icon: '🚀', detail: 'Ship real projects', earned: level >= 3 },
-    { level: 4, title: 'The Marketer', icon: '📱', detail: 'Build your brand', earned: level >= 4 },
-    { level: 5, title: 'The Scout', icon: '🎯', detail: 'Mentor others', earned: level >= 5 },
-    { level: 6, title: 'The Gladiator', icon: '⚔️', detail: 'Battle ready', earned: level >= 6 },
-    { level: 7, title: 'The Legend', icon: '👑', detail: 'You made it!', earned: level >= 7 },
+    { level: 1, title: 'The Novice', detail: 'Begin your journey', earned: level >= 1 },
+    { level: 2, title: 'The Architect', detail: 'Master the logic', earned: level >= 2 },
+    { level: 3, title: 'The Builder', detail: 'Ship real projects', earned: level >= 3 },
+    { level: 4, title: 'The Marketer', detail: 'Build your brand', earned: level >= 4 },
+    { level: 5, title: 'The Scout', detail: 'Mentor others', earned: level >= 5 },
+    { level: 6, title: 'The Gladiator', detail: 'Battle ready', earned: level >= 6 },
+    { level: 7, title: 'The Legend', detail: 'You made it', earned: level >= 7 },
   ];
 
   return (
@@ -61,15 +61,12 @@ export default function ProfilePage({ user }) {
             <p className="profile-title">{currentLevelName}</p>
             <p className="profile-meta">
               <span>{user?.email || 'user@example.com'}</span>
-              <span className="separator">•</span>
+              <span className="separator">|</span>
               <span className="role-badge">{role.toUpperCase()}</span>
             </p>
             <div className="profile-badges">
               {user?.isMentor && (
                 <span className="mentor-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                  </svg>
                   Mentor
                 </span>
               )}
@@ -95,28 +92,28 @@ export default function ProfilePage({ user }) {
       {/* Stats Grid */}
       <div className="stats-grid-modern">
         <div className="stat-card">
-          <div className="stat-icon">📚</div>
+          <div className="stat-icon">Q</div>
           <div className="stat-content">
             <div className="stat-value">{completedQuests}</div>
             <div className="stat-label">Quests Completed</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">💬</div>
+          <div className="stat-icon">M</div>
           <div className="stat-content">
             <div className="stat-value">{messageCredits}</div>
             <div className="stat-label">Message Credits</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon">A</div>
           <div className="stat-content">
             <div className="stat-value">{activeMentees}</div>
             <div className="stat-label">Active Mentees</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🔥</div>
+          <div className="stat-icon">S</div>
           <div className="stat-content">
             <div className="stat-value">{streak.current}</div>
             <div className="stat-label">Day Streak</div>
@@ -127,19 +124,18 @@ export default function ProfilePage({ user }) {
       {/* Level Badges */}
       <div className="badges-section">
         <div className="section-header">
-          <h3>🏆 Level Milestones</h3>
+          <h3>Level Milestones</h3>
           <span className="badge-count">{levelBadges.filter(b => b.earned).length}/{levelBadges.length}</span>
         </div>
         <div className="badges-grid-modern">
           {levelBadges.map(badge => (
             <div key={badge.level} className={`milestone-card ${badge.earned ? 'earned' : 'locked'}`}>
-              <div className="milestone-icon">{badge.icon}</div>
               <div className="milestone-content">
                 <div className="milestone-title">{badge.title}</div>
                 <div className="milestone-level">Level {badge.level}</div>
                 <div className="milestone-detail">{badge.detail}</div>
               </div>
-              {badge.earned && <div className="earned-checkmark">✓</div>}
+              {badge.earned && <div className="earned-checkmark">Done</div>}
             </div>
           ))}
         </div>

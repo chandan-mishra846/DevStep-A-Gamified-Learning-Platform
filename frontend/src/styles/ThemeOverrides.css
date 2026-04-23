@@ -1,0 +1,129 @@
+.quest-hero,
+.create-form-modern,
+.quest-card-modern,
+.mentorship-hero,
+.mentorship-content,
+.mentor-card-modern,
+.connection-card,
+.request-card,
+.message-container,
+.conversations-sidebar,
+.chat-area,
+.profile-hero-card,
+.stat-card,
+.badges-section,
+.hero-progress-card,
+.level-card-modern,
+.stats-dashboard {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 18px rgba(17, 24, 39, 0.05) !important;
+  color: #111827 !important;
+}
+
+.hero-title,
+.mentorship-title,
+.profile-name,
+.section-title,
+.level-name-hero,
+.card-title {
+  color: #111827 !important;
+  background: none !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.hero-subtitle,
+.mentorship-subtitle,
+.card-description,
+.profile-title,
+.section-subtitle,
+.stat-label,
+.meta-label {
+  color: #6b7280 !important;
+}
+
+.btn-create-modern,
+.btn-submit-modern,
+.btn-request-modern,
+.btn-new-chat,
+.btn-send,
+.btn-become-mentor,
+.btn-primary-modern,
+.btn-accept-full,
+.btn-accept-request {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  box-shadow: none !important;
+}
+
+.btn-reject-request,
+.btn-decline-full,
+.btn-action-modern.locked,
+.btn-action-modern:disabled {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.btn-create-modern:hover,
+.btn-submit-modern:hover,
+.btn-request-modern:hover,
+.btn-new-chat:hover,
+.btn-send:hover,
+.btn-become-mentor:hover,
+.btn-primary-modern:hover,
+.btn-action-modern:hover:not(:disabled) {
+  transform: none !important;
+  background: #1f2937 !important;
+  box-shadow: none !important;
+}
+
+.form-input-modern,
+.form-textarea-modern,
+.form-select-modern,
+.chat-input,
+.search-input-full {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.form-input-modern:focus,
+.form-textarea-modern:focus,
+.form-select-modern:focus,
+.chat-input:focus,
+.search-input-full:focus {
+  border-color: #111827 !important;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.1) !important;
+}
+
+.meta-card,
+.xp-progress-bar,
+.xp-bar,
+.progress-bar-modern,
+.message-bubble.received,
+.conversation-item,
+.user-item-full {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.message-bubble.sent,
+.conversation-item.active,
+.tab-btn.active,
+.nav-item.active {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+}
+
+.stat-icon,
+.stat-icon-mentorship,
+.feature-icon,
+.hero-icon,
+.empty-icon {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
+}

@@ -15,6 +15,7 @@ export default function MessageSection({ user }) {
   const messagesEndRef = useRef(null);
 
   const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
+  const [didAutoOpen, setDidAutoOpen] = useState(false);
   
   // Auto-scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -106,6 +107,24 @@ export default function MessageSection({ user }) {
     
     return () => clearInterval(pollInterval);
   }, []);
+
+  useEffect(() => {
+    if (didAutoOpen) return;
+    let target = null;
+    try {
+      const raw = localStorage.getItem('messageTargetUser');
+      if (raw) target = JSON.parse(raw);
+    } catch {
+      target = null;
+    }
+    if (!target?._id) return;
+    if (!searchResults?.length) return;
+
+    const found = searchResults.find((u) => u._id === target._id) || target;
+    startNewChat(found);
+    localStorage.removeItem('messageTargetUser');
+    setDidAutoOpen(true);
+  }, [searchResults, didAutoOpen]);
   
   // Separate effect to refresh current conversation
   useEffect(() => {
@@ -200,7 +219,7 @@ export default function MessageSection({ user }) {
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMsg = error.response?.data?.message || 'Failed to send message';
-      alert(`❌ ${errorMsg}`);
+      alert(errorMsg);
     }
   };
 
@@ -215,13 +234,13 @@ export default function MessageSection({ user }) {
         {/* Conversations List (Left Side) */}
         <div className="conversations-sidebar">
           <div className="sidebar-header">
-            <h3>💬 Chats</h3>
+            <h3>Chats</h3>
             <button 
               className="btn-new-chat"
               onClick={() => setShowNewChat(true)}
               title="New Chat"
             >
-              ✚
+              New
             </button>
           </div>
 
@@ -268,7 +287,7 @@ export default function MessageSection({ user }) {
                   className="btn-back"
                   onClick={() => setSelectedConversation(null)}
                 >
-                  ←
+                  Back
                 </button>
                 <div className="chat-avatar">
                   {selectedConversation.partner.name[0].toUpperCase()}
@@ -296,7 +315,7 @@ export default function MessageSection({ user }) {
                     );
                   })
                 ) : (
-                  <p className="empty-chat">No messages yet. Say hi! 👋</p>
+                  <p className="empty-chat">No messages yet.</p>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -310,14 +329,14 @@ export default function MessageSection({ user }) {
                   className="chat-input"
                 />
                 <button type="submit" className="btn-send">
-                  ➤
+                  Send
                 </button>
               </form>
             </>
           ) : showNewChat ? (
             <div className="new-chat-area">
               <div className="new-chat-header">
-                <button onClick={() => setShowNewChat(false)} className="btn-back">←</button>
+                <button onClick={() => setShowNewChat(false)} className="btn-back">Back</button>
                 <h3>New Chat</h3>
               </div>
               <input
@@ -345,7 +364,7 @@ export default function MessageSection({ user }) {
             </div>
           ) : (
             <div className="no-chat-selected">
-              <h2>💬 Select a chat to start messaging</h2>
+              <h2>Select a chat to start messaging</h2>
               <p>Choose a conversation from the left or start a new one</p>
             </div>
           )}

@@ -1,6 +1,6 @@
 import '../styles/Header.css';
 
-export default function Header({ user, onLogout, onRefresh }) {
+export default function Header({ user, onLogout }) {
   // Level names mapping
   const getLevelName = (level) => {
     const levelNames = {
@@ -42,10 +42,9 @@ export default function Header({ user, onLogout, onRefresh }) {
       <div className="header-container">
         <div className="header-left">
           <div className="logo-modern">
-            <span className="logo-icon">🎓</span>
             <div className="logo-text">
-              <h1>Gamified Learning</h1>
-              <p className="tagline">Level Up Your Skills</p>
+              <h1>DevStep Learning Platform</h1>
+              <p className="tagline">Track growth and complete learning tasks</p>
             </div>
           </div>
         </div>
@@ -72,7 +71,7 @@ export default function Header({ user, onLogout, onRefresh }) {
                     <span className="xp-next">{xpRemaining} to Level {currentLevel + 1}</span>
                   )}
                   {currentLevel === 7 && (
-                    <span className="xp-next">Max Level! 🏆</span>
+                    <span className="xp-next">Maximum level reached</span>
                   )}
                 </div>
               </div>
@@ -92,17 +91,7 @@ export default function Header({ user, onLogout, onRefresh }) {
           </div>
           
           <div className="header-actions">
-            {onRefresh && (
-              <button className="action-btn refresh" onClick={onRefresh} title="Refresh Data">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
-                </svg>
-              </button>
-            )}
             <button className="action-btn logout" onClick={onLogout}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-              </svg>
               <span>Logout</span>
             </button>
           </div>

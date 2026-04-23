@@ -25,7 +25,7 @@ class ErrorBoundary extends Component {
           margin: '20px',
           border: '2px solid #dc3545'
         }}>
-          <h2 style={{ color: '#dc3545' }}>⚠️ Something went wrong</h2>
+          <h2 style={{ color: '#dc3545' }}>Something went wrong</h2>
           <p style={{ color: '#666' }}>
             {this.state.error?.message || 'An unexpected error occurred'}
           </p>

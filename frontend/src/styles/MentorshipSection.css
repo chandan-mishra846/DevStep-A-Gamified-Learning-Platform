@@ -732,3 +732,90 @@
     font-size: 60px;
   }
 }
+
+/* Light professional overrides */
+.mentorship-section-modern .mentorship-hero,
+.mentorship-section-modern .stat-card-mentorship,
+.mentorship-section-modern .connections-section,
+.mentorship-section-modern .connection-card,
+.mentorship-section-modern .mentor-card-modern,
+.mentorship-section-modern .request-card,
+.mentorship-section-modern .empty-state-modern,
+.mentorship-section-modern .mentorship-content {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.05) !important;
+}
+
+.mentorship-section-modern .mentorship-title,
+.mentorship-section-modern .section-title,
+.mentorship-section-modern .mentor-name,
+.mentorship-section-modern .connection-info h4,
+.mentorship-section-modern .request-info h4,
+.mentorship-section-modern .empty-state-modern h3 {
+  color: #111827 !important;
+}
+
+.mentorship-section-modern .mentorship-subtitle,
+.mentorship-section-modern .section-description,
+.mentorship-section-modern .connection-level,
+.mentorship-section-modern .request-level,
+.mentorship-section-modern .request-date,
+.mentorship-section-modern .empty-state-modern p,
+.mentorship-section-modern .stat-label-mentorship {
+  color: #6b7280 !important;
+}
+
+.mentorship-section-modern .hero-icon,
+.mentorship-section-modern .stat-icon-mentorship,
+.mentorship-section-modern .title-icon,
+.mentorship-section-modern .empty-icon,
+.mentorship-section-modern .slots-icon {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px;
+  filter: none !important;
+  padding: 6px 10px;
+  font-size: 16px !important;
+}
+
+.mentorship-section-modern .mentorship-tabs {
+  border-bottom: 1px solid #d1d5db !important;
+}
+
+.mentorship-section-modern .tab-btn {
+  color: #6b7280 !important;
+}
+
+.mentorship-section-modern .tab-btn.active {
+  color: #111827 !important;
+}
+
+.mentorship-section-modern .tab-btn.active::after {
+  background: #111827 !important;
+}
+
+.mentorship-section-modern .btn-become-mentor,
+.mentorship-section-modern .btn-request-modern,
+.mentorship-section-modern .btn-primary-modern,
+.mentorship-section-modern .btn-message-mentor,
+.mentorship-section-modern .btn-accept-request,
+.mentorship-section-modern .btn-accept-full {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  box-shadow: none !important;
+}
+
+.mentorship-section-modern .btn-message-mentor,
+.mentorship-section-modern .btn-message-mentor * {
+  color: #ffffff !important;
+}
+
+.mentorship-section-modern .btn-reject-request,
+.mentorship-section-modern .btn-decline-full {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  border: 1px solid #d1d5db !important;
+}

@@ -3,7 +3,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import '../styles/MentorshipSection.css';
 
-export default function MentorshipSection({ user }) {
+export default function MentorshipSection({ user, onMessageUser }) {
   const [mentorships, setMentorships] = useState([]);
   const [isMentor, setIsMentor] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function MentorshipSection({ user }) {
 
   const handleBecomeMentor = async () => {
     if (user?.level < 5) {
-      alert('⚠️ You need to reach Level 5 to become a mentor!');
+      alert('You need to reach Level 5 to become a mentor.');
       return;
     }
 
@@ -71,13 +71,13 @@ export default function MentorshipSection({ user }) {
         localStorage.setItem('userInfo', JSON.stringify(userInfo));
       }
       
-      alert('🎓 You are now a Mentor! You can accept up to 3 mentees.');
+      alert('You are now a mentor. You can accept up to 3 mentees.');
       setIsMentor(true);
       window.location.reload();
     } catch (error) {
       console.error('Error:', error);
       const errorMsg = error.response?.data?.message || 'Failed to become mentor';
-      alert(`❌ ${errorMsg}`);
+      alert(errorMsg);
     }
   };
 
@@ -88,13 +88,13 @@ export default function MentorshipSection({ user }) {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('✅ Mentorship request sent!');
+      alert('Mentorship request sent.');
       fetchMentorships();
       setShowMentorList(false);
     } catch (error) {
       console.error('Error:', error);
       const errorMsg = error.response?.data?.message || 'Failed to request mentorship';
-      alert(`❌ ${errorMsg}`);
+      alert(errorMsg);
     }
   };
 
@@ -105,7 +105,7 @@ export default function MentorshipSection({ user }) {
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(action === 'accept' ? '✅ Request accepted!' : '❌ Request rejected');
+      alert(action === 'accept' ? 'Request accepted.' : 'Request rejected.');
       fetchMentorships();
     } catch (error) {
       console.error('Error:', error);
@@ -117,12 +117,19 @@ export default function MentorshipSection({ user }) {
   const myMentors = mentorships.filter(m => m.mentee?._id === user._id);
   const pendingRequests = myMentees.filter(m => m.status === 'pending');
 
+  const handleMessageClick = (target) => {
+    if (!target?._id) return;
+    if (typeof onMessageUser === 'function') {
+      onMessageUser(target);
+    }
+  };
+
   return (
     <div className="mentorship-section-modern">
       {/* Hero Section */}
       <div className="mentorship-hero">
         <div className="hero-content-mentorship">
-          <div className="hero-icon">🎓</div>
+          <div className="hero-icon">Mentorship</div>
           <div>
             <h1 className="mentorship-title">Mentorship Program</h1>
             <p className="mentorship-subtitle">
@@ -135,7 +142,6 @@ export default function MentorshipSection({ user }) {
         <div className="hero-actions">
           {!isMentor && !user?.isMentor && user?.level >= 5 && (
             <button className="btn-become-mentor" onClick={handleBecomeMentor}>
-              <span className="btn-icon">👨‍🏫</span>
               Become a Mentor
             </button>
           )}
@@ -153,28 +159,28 @@ export default function MentorshipSection({ user }) {
       {/* Stats Overview */}
       <div className="mentorship-stats">
         <div className="stat-card-mentorship">
-          <div className="stat-icon-mentorship">👥</div>
+          <div className="stat-icon-mentorship">A</div>
           <div>
             <div className="stat-value-mentorship">{myMentees.length}</div>
             <div className="stat-label-mentorship">Active Mentees</div>
           </div>
         </div>
         <div className="stat-card-mentorship">
-          <div className="stat-icon-mentorship">📚</div>
+          <div className="stat-icon-mentorship">M</div>
           <div>
             <div className="stat-value-mentorship">{myMentors.length}</div>
             <div className="stat-label-mentorship">My Mentors</div>
           </div>
         </div>
         <div className="stat-card-mentorship">
-          <div className="stat-icon-mentorship">⏳</div>
+          <div className="stat-icon-mentorship">P</div>
           <div>
             <div className="stat-value-mentorship">{pendingRequests.length}</div>
             <div className="stat-label-mentorship">Pending Requests</div>
           </div>
         </div>
         <div className="stat-card-mentorship">
-          <div className="stat-icon-mentorship">✅</div>
+          <div className="stat-icon-mentorship">C</div>
           <div>
             <div className="stat-value-mentorship">
               {mentorships.filter(m => m.status === 'accepted').length}
@@ -219,7 +225,7 @@ export default function MentorshipSection({ user }) {
                 {myMentors.length > 0 && (
                   <div className="connections-section">
                     <h3 className="section-title">
-                      <span className="title-icon">👨‍🏫</span>
+                      <span className="title-icon">Mentors</span>
                       My Mentors
                     </h3>
                     <div className="connections-grid">
@@ -231,7 +237,7 @@ export default function MentorshipSection({ user }) {
                             </div>
                             <div className="connection-info">
                               <h4>{m.mentor?.name || 'Unknown'}</h4>
-                              <p className="connection-level">Level {m.mentor?.level} • {m.mentor?.currentLevelName}</p>
+                              <p className="connection-level">Level {m.mentor?.level} | {m.mentor?.currentLevelName}</p>
                             </div>
                             <span className={`status-pill status-${m.status}`}>
                               {m.status}
@@ -240,10 +246,16 @@ export default function MentorshipSection({ user }) {
                           {m.status === 'accepted' && (
                             <div className="connection-stats">
                               <div className="connection-stat">
-                                <span className="stat-icon-small">📖</span>
+                                <span className="stat-icon-small">S</span>
                                 <span>{m.sessions?.length || 0} Sessions</span>
                               </div>
-                              <button className="btn-message-mentor">Message</button>
+                              <button
+                                className="btn-message-mentor"
+                                type="button"
+                                onClick={() => handleMessageClick(m.mentor)}
+                              >
+                                Message
+                              </button>
                             </div>
                           )}
                         </div>
@@ -255,7 +267,7 @@ export default function MentorshipSection({ user }) {
                 {myMentees.length > 0 && (
                   <div className="connections-section">
                     <h3 className="section-title">
-                      <span className="title-icon">👥</span>
+                      <span className="title-icon">Mentees</span>
                       My Mentees
                     </h3>
                     <div className="connections-grid">
@@ -267,7 +279,7 @@ export default function MentorshipSection({ user }) {
                             </div>
                             <div className="connection-info">
                               <h4>{m.mentee?.name || 'Unknown'}</h4>
-                              <p className="connection-level">Level {m.mentee?.level} • {m.mentee?.currentLevelName}</p>
+                              <p className="connection-level">Level {m.mentee?.level} | {m.mentee?.currentLevelName}</p>
                             </div>
                             <span className={`status-pill status-${m.status}`}>
                               {m.status}
@@ -279,23 +291,29 @@ export default function MentorshipSection({ user }) {
                                 className="btn-accept-request"
                                 onClick={() => handleRespondToRequest(m._id, 'accept')}
                               >
-                                ✓ Accept
+                                Accept
                               </button>
                               <button
                                 className="btn-reject-request"
                                 onClick={() => handleRespondToRequest(m._id, 'reject')}
                               >
-                                ✕ Decline
+                                Decline
                               </button>
                             </div>
                           )}
                           {m.status === 'accepted' && (
                             <div className="connection-stats">
                               <div className="connection-stat">
-                                <span className="stat-icon-small">📖</span>
+                                <span className="stat-icon-small">S</span>
                                 <span>{m.sessions?.length || 0} Sessions</span>
                               </div>
-                              <button className="btn-message-mentor">Message</button>
+                              <button
+                                className="btn-message-mentor"
+                                type="button"
+                                onClick={() => handleMessageClick(m.mentee)}
+                              >
+                                Message
+                              </button>
                             </div>
                           )}
                         </div>
@@ -306,7 +324,7 @@ export default function MentorshipSection({ user }) {
 
                 {mentorships.length === 0 && (
                   <div className="empty-state-modern">
-                    <div className="empty-icon">📚</div>
+                    <div className="empty-icon">Info</div>
                     <h3>No Mentorship Connections Yet</h3>
                     <p>
                       {isMentor || user?.isMentor 
@@ -332,7 +350,7 @@ export default function MentorshipSection({ user }) {
           <div className="find-mentors-section">
             <div className="section-header-find">
               <h3 className="section-title">
-                <span className="title-icon">🔍</span>
+                <span className="title-icon">Search</span>
                 Available Mentors
               </h3>
               <p className="section-description">Connect with experienced mentors to accelerate your learning</p>
@@ -355,10 +373,10 @@ export default function MentorshipSection({ user }) {
                     <div className="mentor-card-body">
                       <h4 className="mentor-name">{mentor.name}</h4>
                       <p className="mentor-level-badge">
-                        Level {mentor.level} • {mentor.currentLevelName}
+                        Level {mentor.level} | {mentor.currentLevelName}
                       </p>
                       <div className="mentor-slots-info">
-                        <span className="slots-icon">👥</span>
+                        <span className="slots-icon">Slots</span>
                         <span className="slots-text">
                           {mentor.mentorSlots - (mentor.activeMentees?.length || 0)} / {mentor.mentorSlots} slots available
                         </span>
@@ -375,7 +393,7 @@ export default function MentorshipSection({ user }) {
               </div>
             ) : (
               <div className="empty-state-modern">
-                <div className="empty-icon">😔</div>
+                <div className="empty-icon">Info</div>
                 <h3>No Mentors Available</h3>
                 <p>Check back later or become a mentor yourself!</p>
               </div>
@@ -387,7 +405,7 @@ export default function MentorshipSection({ user }) {
           <div className="requests-section">
             <div className="section-header-find">
               <h3 className="section-title">
-                <span className="title-icon">📬</span>
+                <span className="title-icon">Inbox</span>
                 Mentorship Requests
               </h3>
               <p className="section-description">Review and respond to mentorship requests</p>
@@ -403,7 +421,7 @@ export default function MentorshipSection({ user }) {
                       </div>
                       <div className="request-info">
                         <h4>{m.mentee?.name || 'Unknown'}</h4>
-                        <p className="request-level">Level {m.mentee?.level} • {m.mentee?.currentLevelName}</p>
+                        <p className="request-level">Level {m.mentee?.level} | {m.mentee?.currentLevelName}</p>
                         <p className="request-date">
                           Requested {new Date(m.createdAt).toLocaleDateString()}
                         </p>
@@ -414,13 +432,13 @@ export default function MentorshipSection({ user }) {
                         className="btn-accept-full"
                         onClick={() => handleRespondToRequest(m._id, 'accept')}
                       >
-                        ✓ Accept Request
+                        Accept Request
                       </button>
                       <button
                         className="btn-decline-full"
                         onClick={() => handleRespondToRequest(m._id, 'reject')}
                       >
-                        ✕ Decline
+                        Decline
                       </button>
                     </div>
                   </div>
@@ -428,7 +446,7 @@ export default function MentorshipSection({ user }) {
               </div>
             ) : (
               <div className="empty-state-modern">
-                <div className="empty-icon">✉️</div>
+                <div className="empty-icon">Info</div>
                 <h3>No Pending Requests</h3>
                 <p>You'll see new mentorship requests here</p>
               </div>

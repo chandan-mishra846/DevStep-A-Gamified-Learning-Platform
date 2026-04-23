@@ -23,12 +23,21 @@ const questSchema = new mongoose.Schema({
   },
   xpReward: { type: Number, required: true },
   
-  // Quiz questions (if contentType is 'quiz')
+  // Quiz settings and questions (if contentType is 'quiz')
+  quizSettings: {
+    passingScore: { type: Number, default: 60, min: 0, max: 100 },
+    allowMultipleCorrect: { type: Boolean, default: false },
+    shuffleOptions: { type: Boolean, default: false }
+  },
   quizQuestions: [{
-    question: String,
-    options: [String],
-    correctAnswer: Number, // Index of correct option
-    explanation: String
+    question: { type: String, required: true },
+    options: [{ type: String, required: true }],
+    // Legacy single-correct support.
+    correctAnswer: { type: Number, default: null },
+    // New multi-correct support for optional/multiple answers.
+    correctAnswers: [{ type: Number }],
+    explanation: { type: String, default: '' },
+    allowMultiple: { type: Boolean, default: false }
   }],
   
   // Project requirements (if contentType is 'project')

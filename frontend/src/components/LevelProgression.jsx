@@ -7,58 +7,58 @@ import '../styles/LevelProgression.css';
 const LEVEL_SYSTEM = [
   {
     level: 1,
-    name: "🔰 The Novice",
+    name: "The Novice",
     minXP: 0,
     maxXP: 500,
-    features: ["✅ Access basic quests", "📚 Start learning journey", "🏆 Earn first badges", "⭐ XP Range: 0-500"],
+    features: ["Access basic quests", "Start learning journey", "Earn first badges", "XP Range: 0-500"],
     description: "You are beginning your coding adventure!"
   },
   {
     level: 2,
-    name: "⭐ The Learner",
+    name: "The Learner",
     minXP: 500,
     maxXP: 1500,
-    features: ["✅ Unlock intermediate quests", "💬 Start messaging users", "🎖️ Earn learning achievements", "⭐ XP Range: 500-1500"],
+    features: ["Unlock intermediate quests", "Start messaging users", "Earn learning achievements", "XP Range: 500-1500"],
     description: "You're making solid progress!"
   },
   {
     level: 3,
-    name: "🌟 The Scholar",
+    name: "The Scholar",
     minXP: 1500,
     maxXP: 3000,
-    features: ["✅ Access advanced quests", "📈 Unlock streak tracking", "🎖️ Earn specialty badges", "⭐ XP Range: 1500-3000"],
+    features: ["Access advanced quests", "Unlock streak tracking", "Earn specialty badges", "XP Range: 1500-3000"],
     description: "You've become a true scholar!"
   },
   {
     level: 4,
-    name: "💪 The Expert",
+    name: "The Expert",
     minXP: 3000,
     maxXP: 5000,
-    features: ["✅ Master-level quests available", "🔥 Unlock advanced features", "📊 Advanced analytics dashboard", "⭐ XP Range: 3000-5000"],
+    features: ["Master-level quests available", "Unlock advanced features", "Advanced analytics dashboard", "XP Range: 3000-5000"],
     description: "You are becoming an expert!"
   },
   {
     level: 5,
-    name: "🎓 The Mentor",
+    name: "The Mentor",
     minXP: 5000,
     maxXP: 8000,
-    features: ["✅ Create your own quests", "👨‍🏫 Become a mentor (3 mentees)", "📝 Design learning paths", "🏆 Earn mentor badges", "⭐ XP Range: 5000-8000"],
+    features: ["Create your own quests", "Become a mentor (3 mentees)", "Design learning paths", "Earn mentor badges", "XP Range: 5000-8000"],
     description: "You can now guide others!"
   },
   {
     level: 6,
-    name: "🚀 The Master",
+    name: "The Master",
     minXP: 8000,
     maxXP: 12000,
-    features: ["✅ Create premium quests", "👥 Mentor up to 5 users", "🌟 Create learning communities", "🎯 Exclusive achievements", "⭐ XP Range: 8000-12000"],
+    features: ["Create premium quests", "Mentor up to 5 users", "Create learning communities", "Exclusive achievements", "XP Range: 8000-12000"],
     description: "You are a master of your craft!"
   },
   {
     level: 7,
-    name: "👑 The Grandmaster",
+    name: "The Grandmaster",
     minXP: 12000,
     maxXP: Infinity,
-    features: ["✅ Unlimited quest creation", "👥 Lead community programs", "💎 Exclusive recognition", "🏅 Hall of fame entry", "⭐ XP Range: 12000+"],
+    features: ["Unlimited quest creation", "Lead community programs", "Exclusive recognition", "Hall of fame entry", "XP Range: 12000+"],
     description: "You are a legend in the community!"
   }
 ];
@@ -165,7 +165,7 @@ export default function LevelProgression({ user }) {
               {userProgress?.nextLevel && (
                 <div className="next-level-info">
                   <span className="next-level-text">
-                    🎯 {(userProgress?.xpToNext || 0).toLocaleString()} XP to reach
+                    {(userProgress?.xpToNext || 0).toLocaleString()} XP to reach
                   </span>
                   <span className="next-level-name">{userProgress?.nextLevel?.name}</span>
                 </div>
@@ -200,7 +200,7 @@ export default function LevelProgression({ user }) {
             <div className="features-grid">
               {userProgress.levelInfo?.features?.map((feature, idx) => (
                 <div key={idx} className="feature-card">
-                  <div className="feature-icon">✓</div>
+                  <div className="feature-icon">Done</div>
                   <span>{feature}</span>
                 </div>
               ))}
@@ -261,7 +261,7 @@ export default function LevelProgression({ user }) {
                   <span>
                     {(level?.minXP || 0).toLocaleString()} - {
                       level?.maxXP === Infinity 
-                        ? '∞' 
+                        ? 'max' 
                         : (level?.maxXP || 0).toLocaleString()
                     } XP
                   </span>

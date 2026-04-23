@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
 
   // Login Function
   const login = async (email, password) => {
-    const { data } = await axios.post(`${API_BASE_URL}/api/users/login`, { email, password });
+    const payload = { email: email.trim().toLowerCase(), password };
+    const { data } = await axios.post(`${API_BASE_URL}/api/users/login`, payload);
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     return data;
@@ -32,7 +33,8 @@ export const AuthProvider = ({ children }) => {
   
   // Register Function
   const register = async (name, email, password) => {
-    const { data } = await axios.post(`${API_BASE_URL}/api/users/register`, { name, email, password });
+    const payload = { name: name.trim(), email: email.trim().toLowerCase(), password };
+    const { data } = await axios.post(`${API_BASE_URL}/api/users/register`, payload);
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
     return data;
@@ -59,6 +61,10 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
+      if (error?.response?.status === 401) {
+        localStorage.removeItem('userInfo');
+        setUser(null);
+      }
     }
   };
 

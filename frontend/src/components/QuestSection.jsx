@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
+import { AuthContext } from '../contexts/AuthContext';
 import '../styles/QuestSection.css';
 
 export default function QuestSection({ user }) {
+  const { refreshUser } = useContext(AuthContext);
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [activeQuizQuest, setActiveQuizQuest] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
+  const [quizReview, setQuizReview] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -14,8 +21,48 @@ export default function QuestSection({ user }) {
     contentUrl: '',
     difficulty: 'easy',
     xpReward: 100,
-    requiredLevel: 1
+    requiredLevel: 1,
+    quizQuestions: []
   });
+
+  const createEmptyQuizQuestion = () => ({
+    question: '',
+    options: ['', ''],
+    allowMultiple: false,
+    correctAnswer: 0,
+    correctAnswers: [],
+    explanation: ''
+  });
+
+  const formatQuizQuestionsForApi = (questions) => {
+    const formatted = (questions || [])
+      .map((q) => {
+        const options = (q.options || []).map((opt) => opt.trim()).filter(Boolean);
+        if (!q.question?.trim() || options.length < 2) return null;
+        if (q.allowMultiple) {
+          const uniqueAnswers = Array.from(new Set((q.correctAnswers || []).map(Number).filter((idx) => idx >= 0 && idx < options.length)));
+          if (uniqueAnswers.length === 0) return null;
+          return {
+            question: q.question.trim(),
+            options,
+            correctAnswers: uniqueAnswers,
+            allowMultiple: true,
+            explanation: q.explanation?.trim() || ''
+          };
+        }
+        const correctAnswer = Number.isInteger(Number(q.correctAnswer)) ? Number(q.correctAnswer) : 0;
+        if (correctAnswer < 0 || correctAnswer >= options.length) return null;
+        return {
+          question: q.question.trim(),
+          options,
+          correctAnswer,
+          allowMultiple: false,
+          explanation: q.explanation?.trim() || ''
+        };
+      })
+      .filter(Boolean);
+    return formatted;
+  };
 
   useEffect(() => {
     fetchQuests();
@@ -60,9 +107,20 @@ export default function QuestSection({ user }) {
     e.preventDefault();
     try {
       const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
+      let payload = { ...formData };
+      if (payload.contentType === 'quiz') {
+        payload.quizQuestions = formatQuizQuestionsForApi(payload.quizQuestions);
+        if (payload.quizQuestions.length === 0) {
+          alert('Add at least one valid quiz question with options and correct answer.');
+          return;
+        }
+        payload.quizSettings = { passingScore: 60, allowMultipleCorrect: true, shuffleOptions: false };
+      } else {
+        payload.quizQuestions = [];
+      }
       const { data } = await axios.post(
         `${API_BASE_URL}/api/quests`, 
-        formData,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setQuests([...quests, data]);
@@ -74,13 +132,14 @@ export default function QuestSection({ user }) {
         contentUrl: '',
         difficulty: 'easy',
         xpReward: 100,
-        requiredLevel: 1
+        requiredLevel: 1,
+        quizQuestions: []
       });
-      alert('✅ Quest created successfully!');
+      alert('Quest created successfully.');
     } catch (error) {
       console.error('Error creating quest:', error);
       const errorMsg = error.response?.data?.message || 'Failed to create quest';
-      alert(`❌ ${errorMsg}`);
+      alert(errorMsg);
     }
   };
 
@@ -109,14 +168,16 @@ export default function QuestSection({ user }) {
       }
       
       // Show success message
-      let message = `🎉 Quest Completed!\n+${data.xpEarned} XP\nTotal XP: ${data.totalXP}`;
+      let message = `Quest completed.\n+${data.xpEarned} XP\nTotal XP: ${data.totalXP}`;
       if (data.leveledUp) {
-        message += `\n\n🎊 LEVEL UP! You are now Level ${data.currentLevel}!`;
+        message += `\n\nLevel up! You are now Level ${data.currentLevel}.`;
       }
       alert(message);
-      
-      // Refresh the page to see updated stats
-      window.location.reload();
+
+      await fetchQuests();
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (error) {
       console.error('Error completing quest:', error);
       console.error('Error response:', error.response?.data);
@@ -125,16 +186,94 @@ export default function QuestSection({ user }) {
       
       // Different alerts based on error type
       if (error.response?.status === 400 && errorMsg.includes('already completed')) {
-        alert(`✅ ${errorMsg}\n\nYou've already earned XP for this quest!`);
+        alert(`${errorMsg}\n\nYou have already earned XP for this quest.`);
       } else if (error.response?.status === 403) {
-        alert(`🔒 ${errorMsg}\n\nLevel up to unlock this quest!`);
+        alert(`${errorMsg}\n\nLevel up to unlock this quest.`);
       } else if (error.response?.status === 401) {
-        alert(`🔐 Authentication Error\n\nPlease log in again.`);
+        alert('Authentication error.\n\nPlease log in again.');
         localStorage.removeItem('userInfo');
         window.location.href = '/';
       } else {
-        alert(`❌ ${errorMsg}`);
+        alert(errorMsg);
       }
+    }
+  };
+
+  const openQuizAttempt = async (questId) => {
+    try {
+      setQuizLoading(true);
+      const { data } = await axios.get(`${API_BASE_URL}/api/quests/${questId}`);
+      const quest = data?.quest;
+      if (!quest || quest.contentType !== 'quiz') {
+        alert('Quiz data not available for this quest.');
+        return;
+      }
+      setActiveQuizQuest(quest);
+      setQuizAnswers({});
+    } catch (error) {
+      console.error('Error loading quiz:', error);
+      alert(error.response?.data?.message || 'Failed to load quiz.');
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  const updateSingleAnswer = (questionIndex, optionIndex) => {
+    setQuizAnswers((prev) => ({ ...prev, [questionIndex]: optionIndex }));
+  };
+
+  const updateMultiAnswer = (questionIndex, optionIndex, checked) => {
+    setQuizAnswers((prev) => {
+      const current = new Set(Array.isArray(prev[questionIndex]) ? prev[questionIndex] : []);
+      if (checked) current.add(optionIndex);
+      else current.delete(optionIndex);
+      return { ...prev, [questionIndex]: [...current] };
+    });
+  };
+
+  const submitQuizAttempt = async (e) => {
+    e.preventDefault();
+    if (!activeQuizQuest) return;
+    try {
+      setQuizSubmitting(true);
+      const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
+      const answers = (activeQuizQuest.quizQuestions || []).map((q, index) => {
+        const answer = quizAnswers[index];
+        if (q.allowMultiple) return Array.isArray(answer) ? answer : [];
+        return Number.isInteger(Number(answer)) ? Number(answer) : -1;
+      });
+
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/quests/${activeQuizQuest._id}/submit-quiz`,
+        { answers },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      if (userInfo && data.totalXP !== undefined) {
+        userInfo.xp = data.totalXP;
+        userInfo.level = data.currentLevel;
+        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      }
+
+      setQuizReview({
+        title: activeQuizQuest.title,
+        score: data.score,
+        xpEarned: data.xpEarned,
+        results: data.results || [],
+        questions: activeQuizQuest.quizQuestions || []
+      });
+      setActiveQuizQuest(null);
+      setQuizAnswers({});
+      await fetchQuests();
+      if (refreshUser) {
+        await refreshUser();
+      }
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert(error.response?.data?.message || 'Failed to submit quiz.');
+    } finally {
+      setQuizSubmitting(false);
     }
   };
 
@@ -207,12 +346,20 @@ export default function QuestSection({ user }) {
                 <select
                   className="form-select-modern"
                   value={formData.contentType}
-                  onChange={(e) => setFormData({ ...formData, contentType: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      contentType: e.target.value,
+                      quizQuestions: e.target.value === 'quiz'
+                        ? (formData.quizQuestions.length ? formData.quizQuestions : [createEmptyQuizQuestion()])
+                        : []
+                    })
+                  }
                 >
-                  <option value="video">📹 Video</option>
-                  <option value="article">📄 Article</option>
-                  <option value="quiz">❓ Quiz</option>
-                  <option value="project">💻 Project</option>
+                  <option value="video">Video</option>
+                  <option value="article">Article</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="project">Project</option>
                 </select>
               </div>
 
@@ -223,9 +370,9 @@ export default function QuestSection({ user }) {
                   value={formData.difficulty}
                   onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                 >
-                  <option value="easy">🟢 Easy</option>
-                  <option value="medium">🟡 Medium</option>
-                  <option value="hard">🔴 Hard</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
                 </select>
               </div>
 
@@ -259,12 +406,138 @@ export default function QuestSection({ user }) {
               <input
                 type="url"
                 className="form-input-modern"
-                placeholder="https://..."
+                placeholder={formData.contentType === 'quiz' ? 'Optional for quiz' : 'https://...'}
                 value={formData.contentUrl}
                 onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
-                required
+                required={formData.contentType !== 'quiz'}
               />
             </div>
+
+            {formData.contentType === 'quiz' && (
+              <div className="form-section">
+                <label className="form-label">Quiz Builder</label>
+                <div className="quiz-builder">
+                  {(formData.quizQuestions || []).map((question, qIndex) => (
+                    <div key={qIndex} className="quiz-question-card">
+                      <div className="quiz-question-head">
+                        <strong>Question {qIndex + 1}</strong>
+                        <button
+                          type="button"
+                          className="btn-create-modern"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              quizQuestions: formData.quizQuestions.filter((_, idx) => idx !== qIndex)
+                            })
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        className="form-input-modern"
+                        placeholder="Question text"
+                        value={question.question}
+                        onChange={(e) => {
+                          const updated = [...formData.quizQuestions];
+                          updated[qIndex] = { ...updated[qIndex], question: e.target.value };
+                          setFormData({ ...formData, quizQuestions: updated });
+                        }}
+                      />
+                      <label className="form-label">
+                        <input
+                          type="checkbox"
+                          checked={question.allowMultiple}
+                          onChange={(e) => {
+                            const updated = [...formData.quizQuestions];
+                            updated[qIndex] = {
+                              ...updated[qIndex],
+                              allowMultiple: e.target.checked,
+                              correctAnswers: e.target.checked ? (updated[qIndex].correctAnswers || []) : [],
+                              correctAnswer: e.target.checked ? 0 : updated[qIndex].correctAnswer || 0
+                            };
+                            setFormData({ ...formData, quizQuestions: updated });
+                          }}
+                        />{' '}
+                        Multiple correct answers
+                      </label>
+                      {(question.options || []).map((opt, optIndex) => (
+                        <div key={optIndex} className="quiz-option-row">
+                          <input
+                            type="text"
+                            className="form-input-modern"
+                            placeholder={`Option ${optIndex + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const updated = [...formData.quizQuestions];
+                              const options = [...updated[qIndex].options];
+                              options[optIndex] = e.target.value;
+                              updated[qIndex] = { ...updated[qIndex], options };
+                              setFormData({ ...formData, quizQuestions: updated });
+                            }}
+                          />
+                          {question.allowMultiple ? (
+                            <label className="form-label">
+                              <input
+                                type="checkbox"
+                                checked={(question.correctAnswers || []).includes(optIndex)}
+                                onChange={(e) => {
+                                  const updated = [...formData.quizQuestions];
+                                  const current = new Set(updated[qIndex].correctAnswers || []);
+                                  if (e.target.checked) current.add(optIndex);
+                                  else current.delete(optIndex);
+                                  updated[qIndex] = { ...updated[qIndex], correctAnswers: [...current] };
+                                  setFormData({ ...formData, quizQuestions: updated });
+                                }}
+                              />{' '}
+                              Correct
+                            </label>
+                          ) : (
+                            <label className="form-label">
+                              <input
+                                type="radio"
+                                name={`mentor-correct-${qIndex}`}
+                                checked={Number(question.correctAnswer) === optIndex}
+                                onChange={() => {
+                                  const updated = [...formData.quizQuestions];
+                                  updated[qIndex] = { ...updated[qIndex], correctAnswer: optIndex };
+                                  setFormData({ ...formData, quizQuestions: updated });
+                                }}
+                              />{' '}
+                              Correct
+                            </label>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="btn-create-modern"
+                        onClick={() => {
+                          const updated = [...formData.quizQuestions];
+                          updated[qIndex] = { ...updated[qIndex], options: [...updated[qIndex].options, ''] };
+                          setFormData({ ...formData, quizQuestions: updated });
+                        }}
+                      >
+                        Add Option
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn-create-modern"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        quizQuestions: [...(formData.quizQuestions || []), createEmptyQuizQuestion()]
+                      })
+                    }
+                  >
+                    Add Question
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button type="submit" className="btn-submit-modern">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -287,12 +560,6 @@ export default function QuestSection({ user }) {
           {quests.map((quest) => {
             console.log('Quest Data:', quest); // Debug log
             const isLocked = user?.level < quest.requiredLevel;
-            const difficultyIcons = {
-              easy: '🟢',
-              medium: '🟡',
-              hard: '🔴'
-            };
-
             return (
               <div 
                 key={quest._id} 
@@ -331,7 +598,7 @@ export default function QuestSection({ user }) {
                   <div className="card-title-section">
                     <h3 className="card-title">{quest.title}</h3>
                     <span className={`difficulty-badge ${quest.difficulty}`}>
-                      {difficultyIcons[quest.difficulty]} {quest.difficulty}
+                      {quest.difficulty}
                     </span>
                   </div>
                 </div>
@@ -378,9 +645,13 @@ export default function QuestSection({ user }) {
                     className={`btn-action-modern ${isLocked ? 'locked' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCompleteQuest(quest._id);
+                      if (quest.contentType === 'quiz') {
+                        openQuizAttempt(quest._id);
+                      } else {
+                        handleCompleteQuest(quest._id);
+                      }
                     }}
-                    disabled={isLocked}
+                    disabled={isLocked || quizLoading}
                   >
                     {isLocked ? (
                       <>
@@ -394,7 +665,7 @@ export default function QuestSection({ user }) {
                         <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                         </svg>
-                        Complete Quest
+                        {quest.contentType === 'quiz' ? 'Attempt Quiz' : 'Complete Quest'}
                       </>
                     )}
                   </button>
@@ -414,6 +685,109 @@ export default function QuestSection({ user }) {
           <p>Be the first to create a quest and start the adventure!</p>
         </div>
       ) : null}
+
+      {activeQuizQuest && (
+        <div className="quiz-modal-overlay">
+          <div className="quiz-modal">
+            <div className="quiz-modal-header">
+              <h3>{activeQuizQuest.title}</h3>
+              <button type="button" className="btn-create-modern" onClick={() => setActiveQuizQuest(null)}>
+                Close
+              </button>
+            </div>
+            <form onSubmit={submitQuizAttempt} className="quiz-form">
+              {(activeQuizQuest.quizQuestions || []).map((q, qIndex) => (
+                <div key={qIndex} className="quiz-question-block">
+                  <p className="quiz-question-text">{qIndex + 1}. {q.question}</p>
+                  <div className="quiz-options">
+                    {(q.options || []).map((opt, optIndex) => (
+                      <label key={optIndex} className="quiz-option-item">
+                        <input
+                          type={q.allowMultiple ? 'checkbox' : 'radio'}
+                          name={`quiz-${qIndex}`}
+                          checked={q.allowMultiple
+                            ? Array.isArray(quizAnswers[qIndex]) && quizAnswers[qIndex].includes(optIndex)
+                            : Number(quizAnswers[qIndex]) === optIndex}
+                          onChange={(e) => {
+                            if (q.allowMultiple) {
+                              updateMultiAnswer(qIndex, optIndex, e.target.checked);
+                            } else {
+                              updateSingleAnswer(qIndex, optIndex);
+                            }
+                          }}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button type="submit" className="btn-submit-modern" disabled={quizSubmitting}>
+                {quizSubmitting ? 'Submitting Quiz...' : 'Submit Quiz'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {quizReview && (
+        <div className="quiz-modal-overlay">
+          <div className="quiz-modal">
+            <div className="quiz-modal-header">
+              <h3>Quiz Review: {quizReview.title}</h3>
+              <button
+                type="button"
+                className="btn-create-modern"
+                onClick={() => {
+                  setQuizReview(null);
+                }}
+              >
+                Close
+              </button>
+            </div>
+            <p className="hero-subtitle">
+              Score: {Math.round(quizReview.score)}% | XP earned: {quizReview.xpEarned}
+            </p>
+            <div className="quiz-form">
+              {quizReview.results.map((r, idx) => {
+                const q = quizReview.questions[idx];
+                const your = Array.isArray(r.yourAnswer) ? r.yourAnswer : [];
+                const correct = Array.isArray(r.correctAnswer) ? r.correctAnswer : [];
+                return (
+                  <div key={idx} className="quiz-question-block">
+                    <p className="quiz-question-text">
+                      {idx + 1}. {r.question}{' '}
+                      <span style={{ fontWeight: 600, color: r.isCorrect ? '#065f46' : '#991b1b' }}>
+                        {r.isCorrect ? 'Correct' : 'Incorrect'}
+                      </span>
+                    </p>
+                    <div className="quiz-options">
+                      {(q?.options || []).map((opt, optIdx) => {
+                        const isYour = your.includes(optIdx);
+                        const isCorrect = correct.includes(optIdx);
+                        const label = isCorrect ? 'Correct option' : isYour ? 'Your choice' : '';
+                        const bg = isCorrect ? '#ecfdf5' : isYour ? '#fef2f2' : 'transparent';
+                        const border = isCorrect ? '1px solid #a7f3d0' : isYour ? '1px solid #fecaca' : '1px solid #e5e7eb';
+                        return (
+                          <div key={optIdx} style={{ padding: '8px 10px', borderRadius: 8, background: bg, border }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                              <span style={{ color: '#111827' }}>{opt}</span>
+                              <span style={{ color: '#6b7280', fontSize: 12 }}>{label}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {r.explanation ? (
+                      <p style={{ marginTop: 10, color: '#6b7280' }}>Explanation: {r.explanation}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

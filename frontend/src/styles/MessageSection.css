@@ -484,3 +484,90 @@
     display: flex;
   }
 }
+
+/* Light professional overrides */
+.message-section .message-container,
+.message-section .conversations-sidebar,
+.message-section .chat-area,
+.message-section .sidebar-header,
+.message-section .chat-header,
+.message-section .chat-input-form,
+.message-section .new-chat-area,
+.message-section .new-chat-header,
+.message-section .messages-area,
+.message-section .no-chat-selected {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.message-section .sidebar-header h3,
+.message-section .chat-user-info h3,
+.message-section .new-chat-header h3,
+.message-section .conv-header strong,
+.message-section .user-info-full strong,
+.message-section .no-chat-selected h2 {
+  color: #111827 !important;
+}
+
+.message-section .conv-time,
+.message-section .conv-last-message,
+.message-section .chat-user-info p,
+.message-section .loading,
+.message-section .empty-state,
+.message-section .no-chat-selected,
+.message-section .user-info-full p {
+  color: #6b7280 !important;
+}
+
+.message-section .conversation-item,
+.message-section .user-item-full {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.message-section .conversation-item.active {
+  background: #111827 !important;
+  border-left: 4px solid #111827 !important;
+}
+
+.message-section .conversation-item.active .conv-header strong,
+.message-section .conversation-item.active .conv-time,
+.message-section .conversation-item.active .conv-last-message {
+  color: #ffffff !important;
+}
+
+.message-section .conv-avatar,
+.message-section .chat-avatar,
+.message-section .user-avatar {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.message-section .message-bubble.received {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.message-section .message-bubble.sent {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.message-section .chat-input,
+.message-section .search-input-full {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.message-section .btn-new-chat,
+.message-section .btn-send {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.message-section .btn-back {
+  color: #374151 !important;
+}

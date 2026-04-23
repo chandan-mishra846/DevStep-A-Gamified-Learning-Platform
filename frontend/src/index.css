@@ -17,3 +17,10 @@ html, body, #root {
   padding: 0;
   overflow-x: hidden;
 }
+
+body {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #f3f5f8;
+  color: #111827;
+  line-height: 1.5;
+}

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Quest = require('../models/Quest');
 const jwt = require('jsonwebtoken');
 
 // Token Generator Function
@@ -188,4 +189,115 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, authUser, getAllUsers, getUserProfile, updateUserProfile, getCurrentUser };
+// @desc Admin: list users
+const adminGetUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc Admin: update user
+const adminUpdateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    if (req.body.role && ['student', 'mentor', 'admin'].includes(req.body.role)) {
+      user.role = req.body.role;
+    }
+    if (req.body.xp !== undefined && Number.isFinite(Number(req.body.xp))) {
+      user.xp = Math.max(0, Number(req.body.xp));
+    }
+    if (typeof req.body.isMentor === 'boolean') {
+      user.isMentor = req.body.isMentor;
+    }
+    if (typeof req.body.canMentor === 'boolean') {
+      user.canMentor = req.body.canMentor;
+    }
+    if (req.body.mentorSlots !== undefined && Number.isFinite(Number(req.body.mentorSlots))) {
+      user.mentorSlots = Math.max(0, Math.min(5, Number(req.body.mentorSlots)));
+    }
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      level: updatedUser.level,
+      xp: updatedUser.xp,
+      isMentor: updatedUser.isMentor,
+      canMentor: updatedUser.canMentor,
+      mentorSlots: updatedUser.mentorSlots
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc Admin: platform stats
+const adminGetStats = async (req, res) => {
+  try {
+    const [totalUsers, totalQuests, mentors, admins, activeMentorshipUsers, totalXpAgg] = await Promise.all([
+      User.countDocuments(),
+      Quest.countDocuments(),
+      User.countDocuments({ role: 'mentor' }),
+      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ isMentor: true }),
+      User.aggregate([{ $group: { _id: null, xp: { $sum: '$xp' } } }])
+    ]);
+
+    res.status(200).json({
+      totalUsers,
+      totalQuests,
+      mentors,
+      admins,
+      activeMentorshipUsers,
+      totalXp: totalXpAgg?.[0]?.xp || 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc Admin: delete user
+const adminDeleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (req.user._id.toString() === userId) {
+      return res.status(400).json({ message: 'Admin cannot delete own account' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await User.findByIdAndDelete(userId);
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  authUser,
+  getAllUsers,
+  getUserProfile,
+  updateUserProfile,
+  getCurrentUser,
+  adminGetStats,
+  adminGetUsers,
+  adminUpdateUser,
+  adminDeleteUser
+};

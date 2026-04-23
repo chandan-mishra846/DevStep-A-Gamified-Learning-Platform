@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import '../styles/Login.css';
@@ -7,17 +7,26 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, user, loading } = useContext(AuthContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
+      setIsSubmitting(true);
       await login(email, password);
-      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -51,7 +60,7 @@ const Login = () => {
                 className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="********"
               />
             </div>
 
@@ -59,8 +68,8 @@ const Login = () => {
               <div className="error-message">{error}</div>
             )}
 
-            <button type="submit" className="btn-submit">
-              Sign In
+            <button type="submit" className="btn-submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 

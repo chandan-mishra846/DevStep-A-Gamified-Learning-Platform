@@ -1,6 +1,36 @@
 const User = require('../models/User');
 const Quest = require('../models/Quest');
 
+const normalizeQuizQuestions = (quizQuestions = []) => {
+  if (!Array.isArray(quizQuestions)) return [];
+  return quizQuestions
+    .map((q) => {
+      const options = Array.isArray(q.options) ? q.options : [];
+      const hasMulti = Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0;
+      const normalizedCorrectAnswers = hasMulti
+        ? q.correctAnswers.map((a) => Number(a)).filter(Number.isInteger)
+        : Number.isInteger(Number(q.correctAnswer))
+          ? [Number(q.correctAnswer)]
+          : [];
+
+      return {
+        question: q.question,
+        options,
+        allowMultiple: hasMulti || !!q.allowMultiple,
+        correctAnswer: hasMulti ? null : (normalizedCorrectAnswers[0] ?? null),
+        correctAnswers: normalizedCorrectAnswers,
+        explanation: q.explanation || ''
+      };
+    })
+    .filter((q) => q.question && q.options?.length >= 2 && q.correctAnswers?.length > 0);
+};
+
+const normalizeQuizSettings = (quizSettings = {}) => ({
+  passingScore: Number.isFinite(Number(quizSettings.passingScore)) ? Number(quizSettings.passingScore) : 60,
+  allowMultipleCorrect: !!quizSettings.allowMultipleCorrect,
+  shuffleOptions: !!quizSettings.shuffleOptions
+});
+
 // @desc    Complete a quest and award XP
 // @route   POST /api/quests/:questId/complete
 const completeQuest = async (req, res) => {
@@ -11,6 +41,12 @@ const completeQuest = async (req, res) => {
     const quest = await Quest.findById(questId);
     if (!quest) {
       return res.status(404).json({ message: 'Quest not found' });
+    }
+
+    if (quest.contentType === 'quiz') {
+      return res.status(400).json({
+        message: 'Quiz quests must be attempted via quiz submission.'
+      });
     }
     
     const user = await User.findById(userId);
@@ -80,7 +116,7 @@ const completeQuest = async (req, res) => {
 const submitQuiz = async (req, res) => {
   try {
     const { questId } = req.params;
-    const { answers } = req.body; // Array of answer indices
+    const { answers } = req.body; // Array of answer index or index-array per question
     const userId = req.user._id;
     
     const quest = await Quest.findById(questId);
@@ -93,55 +129,54 @@ const submitQuiz = async (req, res) => {
     // Calculate score
     let correctCount = 0;
     const results = quest.quizQuestions.map((q, index) => {
-      const isCorrect = answers[index] === q.correctAnswer;
+      const submitted = answers[index];
+      const expectedAnswers = Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
+        ? q.correctAnswers.map(Number).sort((a, b) => a - b)
+        : (Number.isInteger(q.correctAnswer) ? [Number(q.correctAnswer)] : []);
+      const submittedAnswers = Array.isArray(submitted)
+        ? submitted.map(Number).filter(Number.isInteger).sort((a, b) => a - b)
+        : (Number.isInteger(Number(submitted)) ? [Number(submitted)] : []);
+      const isCorrect = expectedAnswers.length > 0 &&
+        expectedAnswers.length === submittedAnswers.length &&
+        expectedAnswers.every((ans, i) => ans === submittedAnswers[i]);
       if (isCorrect) correctCount++;
       
       return {
         question: q.question,
-        yourAnswer: answers[index],
-        correctAnswer: q.correctAnswer,
+        yourAnswer: submittedAnswers,
+        correctAnswer: expectedAnswers,
         isCorrect,
         explanation: q.explanation
       };
     });
     
     const scorePercentage = (correctCount / quest.quizQuestions.length) * 100;
-    const passed = scorePercentage >= 60; // 60% passing threshold
-    
-    if (passed) {
-      // Award XP based on performance
-      const xpMultiplier = scorePercentage >= 90 ? 1.5 : scorePercentage >= 75 ? 1.2 : 1.0;
-      const xpEarned = Math.floor(quest.xpReward * xpMultiplier);
-      
-      const oldLevel = user.level;
-      user.xp += xpEarned;
-      user.completedQuests.push(questId);
-      await user.save();
-      
-      quest.completedBy.push(userId);
-      await quest.save();
-      
-      return res.status(200).json({
-        passed: true,
-        score: scorePercentage,
-        correctCount,
-        totalQuestions: quest.quizQuestions.length,
-        xpEarned,
-        totalXP: user.xp,
-        leveledUp: user.level > oldLevel,
-        currentLevel: user.level,
-        results
-      });
-    } else {
-      return res.status(200).json({
-        passed: false,
-        score: scorePercentage,
-        correctCount,
-        totalQuestions: quest.quizQuestions.length,
-        message: 'Keep trying! You need 60% to pass.',
-        results
-      });
-    }
+    const passingScore = quest.quizSettings?.passingScore ?? 60;
+    const passed = scorePercentage >= passingScore;
+
+    // Award XP strictly based on quiz score.
+    const xpEarned = Math.max(0, Math.round((quest.xpReward * scorePercentage) / 100));
+
+    const oldLevel = user.level;
+    user.xp += xpEarned;
+    user.completedQuests.push(questId);
+    await user.save();
+
+    quest.completedBy.push(userId);
+    await quest.save();
+
+    return res.status(200).json({
+      passed,
+      score: scorePercentage,
+      correctCount,
+      totalQuestions: quest.quizQuestions.length,
+      xpEarned,
+      totalXP: user.xp,
+      leveledUp: user.level > oldLevel,
+      currentLevel: user.level,
+      message: passed ? 'Quiz completed successfully.' : 'Quiz completed. Keep improving your score.',
+      results
+    });
     
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -231,7 +266,7 @@ const getQuests = async (req, res) => {
     
     const quests = await Quest.find(filter)
       .sort({ orderIndex: 1 })
-      .select('title description requiredLevel difficulty xpReward contentType');
+      .select('title description requiredLevel difficulty xpReward contentType contentUrl');
     
     res.status(200).json({ quests });
   } catch (error) {
@@ -260,7 +295,15 @@ const getQuestById = async (req, res) => {
 // @route   POST /api/quests
 const createQuest = async (req, res) => {
   try {
-    const { title, description, requiredLevel, contentType, contentUrl, difficulty, xpReward, quizQuestions, projectRequirements } = req.body;
+    const { title, description, requiredLevel, contentType, contentUrl, difficulty, xpReward, quizQuestions, quizSettings, projectRequirements } = req.body;
+    const normalizedQuizQuestions = normalizeQuizQuestions(quizQuestions);
+    const normalizedQuizSettings = normalizeQuizSettings(quizSettings);
+
+    if (contentType === 'quiz' && normalizedQuizQuestions.length === 0) {
+      return res.status(400).json({
+        message: 'Quiz quests require quizQuestions with valid options and correct answers.'
+      });
+    }
     
     const quest = await Quest.create({
       title,
@@ -270,7 +313,8 @@ const createQuest = async (req, res) => {
       contentUrl,
       difficulty,
       xpReward,
-      quizQuestions,
+      quizQuestions: normalizedQuizQuestions,
+      quizSettings: normalizedQuizSettings,
       projectRequirements
     });
     
@@ -288,7 +332,18 @@ const createQuest = async (req, res) => {
 const updateQuest = async (req, res) => {
   try {
     const { questId } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+    if (Object.prototype.hasOwnProperty.call(updateData, 'quizQuestions')) {
+      updateData.quizQuestions = normalizeQuizQuestions(updateData.quizQuestions);
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'quizSettings')) {
+      updateData.quizSettings = normalizeQuizSettings(updateData.quizSettings);
+    }
+    if (updateData.contentType === 'quiz' && Array.isArray(updateData.quizQuestions) && updateData.quizQuestions.length === 0) {
+      return res.status(400).json({
+        message: 'Quiz quests require at least one valid quiz question.'
+      });
+    }
     
     const quest = await Quest.findByIdAndUpdate(
       questId,
@@ -328,6 +383,7 @@ const deleteQuest = async (req, res) => {
 
 module.exports = { 
   completeQuest,
+  submitQuiz,
   getQuests,
   getQuestById,
   createQuest,

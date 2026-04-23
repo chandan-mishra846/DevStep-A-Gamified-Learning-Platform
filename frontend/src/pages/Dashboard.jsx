@@ -13,7 +13,11 @@ import '../styles/Dashboard.css';
 export default function Dashboard() {
   const { user, logout, loading: authLoading, refreshUser } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('quests');
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('dashboardActiveTab');
+    return saved || 'profile';
+  });
+  const validTabs = new Set(['profile', 'levels', 'quests', 'mentorship', 'messages']);
 
   useEffect(() => {
     // Only redirect if auth loading is complete and no user exists
@@ -25,28 +29,28 @@ export default function Dashboard() {
     }
   }, [user, navigate, authLoading]);
 
-  // Refresh user data when dashboard loads
+  // Ensure stored tab is valid
   useEffect(() => {
-    if (user && refreshUser) {
-      refreshUser();
+    if (!validTabs.has(activeTab)) {
+      setActiveTab('profile');
+      localStorage.setItem('dashboardActiveTab', 'profile');
     }
-  }, []);
-
-  const handleRefresh = async () => {
-    if (refreshUser) {
-      await refreshUser();
-    }
-  };
+  }, [activeTab]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('dashboardActiveTab', tab);
+  };
+
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <p style={{ color: 'white', fontSize: '20px' }}>Loading...</p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f3f5f8' }}>
+        <p style={{ color: '#6b7280', fontSize: '20px' }}>Loading...</p>
       </div>
     );
   }
@@ -54,41 +58,46 @@ export default function Dashboard() {
   return (
     <ErrorBoundary>
       <div className="dashboard">
-        <Header user={user} onLogout={handleLogout} onRefresh={handleRefresh} />
+        <Header user={user} onLogout={handleLogout} />
         
         <div className="dashboard-container">
           <div className="sidebar">
             <nav className="nav-menu">
               <button
                 className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
+                onClick={() => changeTab('profile')}
               >
-                🙍 Profile
+                Profile
               </button>
               <button
                 className={`nav-item ${activeTab === 'levels' ? 'active' : ''}`}
-                onClick={() => setActiveTab('levels')}
+                onClick={() => changeTab('levels')}
               >
-                📈 Levels
+                Levels
               </button>
               <button
                 className={`nav-item ${activeTab === 'quests' ? 'active' : ''}`}
-                onClick={() => setActiveTab('quests')}
+                onClick={() => changeTab('quests')}
               >
-                📚 Quests
+                Quests
               </button>
               <button
                 className={`nav-item ${activeTab === 'mentorship' ? 'active' : ''}`}
-                onClick={() => setActiveTab('mentorship')}
+                onClick={() => changeTab('mentorship')}
               >
-                🎓 Mentorship
+                Mentorship
               </button>
               <button
                 className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
-                onClick={() => setActiveTab('messages')}
+                onClick={() => changeTab('messages')}
               >
-                💬 Messages
+                Messages
               </button>
+              {user?.role === 'admin' && (
+                <button className="nav-item" onClick={() => navigate('/admin')}>
+                  Admin Panel
+                </button>
+              )}
             </nav>
           </div>
 
@@ -96,7 +105,19 @@ export default function Dashboard() {
             {activeTab === 'levels' && <LevelProgression user={user} />}
             {activeTab === 'profile' && <ProfilePage user={user} />}
             {activeTab === 'quests' && <QuestSection user={user} />}
-            {activeTab === 'mentorship' && <MentorshipSection user={user} />}
+            {activeTab === 'mentorship' && (
+              <MentorshipSection
+                user={user}
+                onMessageUser={(targetUser) => {
+                  try {
+                    localStorage.setItem('messageTargetUser', JSON.stringify(targetUser));
+                  } catch {
+                    // ignore
+                  }
+                  setActiveTab('messages');
+                }}
+              />
+            )}
             {activeTab === 'messages' && <MessageSection user={user} />}
           </div>
         </div>
